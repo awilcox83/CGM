@@ -6,4 +6,4 @@ As yet, it only supports single-end reads.  Support for paired-end reads is unde
 A Bowtie2 installation is required.
 
 Useage:
-python3 cgm.py -s <single end read FASTQ> -rl <read length> -r <reference genome FASTA> -o <prefix for output files>
+python3 cgm.py -s reads.FASTQ -r referenceGenome.FASTA -o cgm
