@@ -6,6 +6,10 @@ A Bowtie2 installation is required.
 
 Useage:
 
+```
 cgm.py -s [reads in FASTQ] -r [reference genome in FASTA] -o [prefix for output files]
+```
 
+```
 cgm.py -1 [Fwd reads FASTQ] -2 [Rev reads FASTQ] -r [reference genome in FASTA] -o [prefix for output files]
+```
