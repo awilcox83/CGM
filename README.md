@@ -8,4 +8,4 @@ A Bowtie2 installation is required.
 
 Useage:
 
-python3 cgm.py -s reads.FASTQ -r referenceGenome.FASTA -o cgm
+cgm.py -s [reads in FASTQ] -r [reference genome in FASTA] -o [prefix for output files]
