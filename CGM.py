@@ -207,34 +207,6 @@ def fwdSplit(x):
 	# return both lines
 	return lineA, lineB
 
-def revSplit(line):
-	#This function takes a line (from a reverse strand read), splits it, and returns both lines
-	#split the nucleotide sequence into two strings
-	# FUNCTION PROBABLY NOT NEEDED
-	seqA = x[9][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
-	seqB = x[9][len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
-	# split the quality score into two strings
-	qualA = x[10][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
-	qualB = x[10][len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
-	# take the CIGAR from the list, convert it into long format, split into two, then convert both parts back to std format
-	cigar = cigarLong(x[5])
-	cigA = cigarShort(cigar[:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1])
-	cigB = cigarShort(cigar[len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:])
-	# make two new lines, based on the original line but substituting in the new sequence, quality and CIGAR	
-	lineA = x
-	lineA[9] = seqA
-	lineA[10] = qualA
-	lineA[5] = cigA
-	lineA = "\t".join(lineA)+"\n"
-	lineB = x
-	lineB[9] = seqB
-	lineB[10] = qualB
-	lineB[5] = cigB
-	# starts at position [length of reference genome]
-	lineB[3] = str(refLength)
-	lineB = "\t".join(lineB)+"\n"
-	# return both lines
-	return lineA, lineB
 
 def unpair(line):
 	#this function turns reads that are part of a pair into single reads
@@ -249,11 +221,6 @@ def unpair(line):
 	return line
 	
 	
-# PAIRED END READS - STUFF TO ADD
-# If read is FWD, the 3' end remains paired with the reverse
-# If read is REV, the 5' end remains paired with the forward
-# Remainder is added to SAM file as an unpaired read	
-
 extendRef(userRef, readLength)
 indexRef()
 # change the next couple of lines to determine if input is a valid file
