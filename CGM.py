@@ -35,13 +35,6 @@ revReads = args.revReads
 output = args.prefix + "."
 
 
-# need to take paired end or single end reads as input, depending on command line args
-# think I just need the filenames here (to pass to bowtie), not to open files
-#singleReads = "phix174_singles.fastq"
-
-# need to append this to filenames created by the program.  will replace eventually with user input
-#output = "cgm."
-
 # get the length of reference genome from FASTA
 x = open(args.refGenome, "r")
 bases = ""
@@ -52,6 +45,7 @@ for line in x:
 		bases = bases + line
 		bases = bases.replace('\n', '')				
 refLength = len(bases)
+print (refLength)
 
 def extendRef(userRef, readLength):
 	# Takes first rl bases of reference sequence and appends to the end
@@ -87,18 +81,18 @@ def indexRef():
 def singlesMapper(filename):
 	# maps reads against extended reference genome using Bowtie2
 	# -k 2 means that reads that map twice will be added to the SAM file twice
-	call (["bowtie2", "-x", output + "ext_ref", "-U" , filename, "-S", output+ "mapped_singles.SAM" , "--quiet"])
+	call (["bowtie2", "-x", output + "ext_ref", "-U" , filename, "-S", output+ "mapped.SAM" , "--quiet"])
 
 def pairMapper(fwd, rev):
 	# maps reads against extended reference genome using Bowtie2
 	# -k 2 means that reads that map twice will be added to the SAM file twice
-	call (["bowtie2", "-x", output + "ext_ref", "-1" , fwd,  "-2" , rev,  "-S", output+ "mapped_singles.SAM"])
+	call (["bowtie2", "-x", output + "ext_ref", "-1" , fwd,  "-2" , rev,  "-S", output+ "mapped.SAM"])
 
 def renumber(SAMfile):
 	# When we extend the genome, some reads will map twice. Bowtie only includes one read by default,
 	# but it could be either. this function will correct the position of reads that map only to the extended part of the genome
 	f = open(SAMfile, 'r')
-	g = open("SAMfile2.SAM", 'w')
+	g = open(output + "renumbered.SAM", 'w')
 	for line in f:
 		if line[0] == "@":
 			g.write(line)
@@ -149,34 +143,32 @@ def readSplitter(SAMfile):
 	# need two variables - start position [3] and sequence [9] length 
 	# if sequence length + start position are longer than refLength, it needs splitting
 	f = open(SAMfile, 'r')
-	g = open(output + "split."+SAMfile, 'w')
+	g = open(output + "split.SAM", 'w')
 	for line in f:
 		if line[0] == "@":
 			pass
 			g.write(line)
 		else:
 			x = line.split()
-			# if TLEN is pos and strand is rev then unpair read
-			if int(x[8]) > 0 and int(x[1])&16 == 16:
-				x = unpair(x)
-			# if TLEN is neg and strand is fwd then unpair read
-			if int(x[8]) < 0 and int(x[1])&16 != 16:
-				x = unpair(x)
-			# next conditional  successful if read spans break and is on forward strand
-			if int(x[3]) + len(x[9]) - 1 > refLength and int(x[1])&16 != 16:
+			# check to see if read spans break
+			if int(x[3]) + len(x[9]) - 1 > refLength:
 				#Call function
 				lineA, lineB = fwdSplit(x)
-				# write both new lines
-				g.write(lineA)
-				g.write(lineB)
-				print ("fwd break")
-			# next conditional if read spans break and is on reverse strand
-			elif int(x[3]) < len(x[9]) - 1 and int(x[1])&16 == 16:
-				#Call function
-				print ("Rev break")
+				# if TLEN is pos and strand is rev then unpair read
+				if int(x[8]) > 0 and int(x[1])&16 == 16:
+					lineB = "\t".join(unpair(lineB.split()))+"\n"
+				# if TLEN is neg and strand is fwd then unpair read
+				if int(x[8]) < 0 and int(x[1])&16 != 16:
+					lineA = "\t".join(unpair(lineA.split()))+"\n"
+				# write both new lines if mapq > 0
+				if int(lineA.split()[4]) > 0:
+					g.write(lineA)
+				if int(lineB.split()[4]) > 0:
+					g.write(lineB)
 			else:
-				# if line does not need splitting, write as is
-				g.write(line)			
+				#if line does not need splitting, write as is
+				if int(line.split()[4]) > 0:
+					g.write(line)			
 	g.close()
 	
 	
@@ -184,14 +176,21 @@ def fwdSplit(x):
 	#This function takes a line (from a fwd strand read), splits it, and returns both lines
 	#split the nucleotide sequence into two strings
 	seqA = x[9][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
+	if (len(seqA) + int(x[3])) > 5387:
+		print("long")
 	seqB = x[9][len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
 	# split the quality score into two strings
 	qualA = x[10][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
 	qualB = x[10][len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
 	# take the CIGAR from the list, convert it into long format, split into two, then convert both parts back to std format
 	cigar = cigarLong(x[5])
-	cigA = cigarShort(cigar[:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1])
-	cigB = cigarShort(cigar[len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:])
+	# need to stop deletions counting towards length
+	cigA = cigar[:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
+	deletions = cigA.count("D")
+	cigA = cigarShort(cigar[:len(x[9]) + deletions - (int(x[3]) + int(len(x[9])) - refLength)+1])
+	cigB = cigar[len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
+	cigB = cigarShort(cigar[len(x[9]) + deletions - (int(x[3]) + int(len(x[9])) - refLength)+1:])
+
 	# make two new lines, based on the original line but substituting in the new sequence, quality and CIGAR	
 	lineA = x
 	lineA[9] = seqA
@@ -211,6 +210,7 @@ def fwdSplit(x):
 def revSplit(line):
 	#This function takes a line (from a reverse strand read), splits it, and returns both lines
 	#split the nucleotide sequence into two strings
+	# FUNCTION PROBABLY NOT NEEDED
 	seqA = x[9][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
 	seqB = x[9][len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
 	# split the quality score into two strings
@@ -263,5 +263,5 @@ elif type(fwdReads) == str and type(revReads) == str:
 	pairMapper(fwdReads, revReads)
 else:
 	print ("No valid input files")	
-renumber(output + "mapped_singles.SAM")
-readSplitter("SAMfile2.SAM")
+renumber(output + "mapped.SAM")
+readSplitter(output + "renumbered.SAM")
