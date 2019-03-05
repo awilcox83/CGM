@@ -1,8 +1,8 @@
 # CGM
 
-Circular Genome Mapper is a tool to map sequencing reads from organisms with circular genomes to linear reference genomes.
+Circular Genome Mapper is a tool to map sequencing reads from organisms with circular genomes to linear reference genomes.  A Bowtie2 installation is required.
 
-A Bowtie2 installation is required.
+CGM extends the reference genome, allowing reads that span both ends to map correctly.  Reads are then split into two and their positions adjusted.
 
 Useage:
 
