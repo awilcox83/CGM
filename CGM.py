@@ -150,8 +150,11 @@ def readSplitter(SAMfile):
 			g.write(line)
 		else:
 			x = line.split()
+			# TODO hard to split reads cigars with deletions right now, so just write them as-is
+			if 'D' in x[5]:
+				g.write(line)
 			# check to see if read spans break
-			if int(x[3]) + len(x[9]) - 1 > refLength:
+			elif int(x[3]) + len(x[9]) - 1 > refLength:
 				#Call function
 				lineA, lineB = fwdSplit(x)
 				# if TLEN is pos and strand is rev then unpair read
