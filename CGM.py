@@ -153,8 +153,8 @@ def readSplitter(SAMfile):
 			# TODO hard to split reads cigars with deletions right now, so just write them as-is
 			if 'D' in x[5]:
 				g.write(line)
-			# check to see if read spans break
-			elif int(x[3]) + len(x[9]) - 1 > refLength:
+			# check to see if read spans break 
+			elif int(x[3]) + len(x[9]) -1 > refLength:
 				#Call function
 				lineA, lineB = fwdSplit(x)
 				# if TLEN is pos and strand is rev then unpair read
@@ -178,19 +178,20 @@ def readSplitter(SAMfile):
 def fwdSplit(x):
 	#This function takes a line (from a fwd strand read), splits it, and returns both lines
 	#split the nucleotide sequence into two strings
-	seqA = x[9][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
-	if (len(seqA) + int(x[3])) > 5387:
+	seqA = x[9][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)]
+	if (len(seqA) + int(x[3])) > 5386:
 		print("long")
+		print(len(seqA) + int(x[3]))
 	seqB = x[9][len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
 	# split the quality score into two strings
-	qualA = x[10][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
+	qualA = x[10][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)]
 	qualB = x[10][len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
 	# take the CIGAR from the list, convert it into long format, split into two, then convert both parts back to std format
 	cigar = cigarLong(x[5])
 	# need to stop deletions counting towards length
-	cigA = cigar[:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1]
+	cigA = cigar[:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)]
 	deletions = cigA.count("D")
-	cigA = cigarShort(cigar[:len(x[9]) + deletions - (int(x[3]) + int(len(x[9])) - refLength)+1])
+	cigA = cigarShort(cigar[:len(x[9]) + deletions - (int(x[3]) + int(len(x[9])) - refLength)])
 	cigB = cigar[len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
 	cigB = cigarShort(cigar[len(x[9]) + deletions - (int(x[3]) + int(len(x[9])) - refLength)+1:])
 
