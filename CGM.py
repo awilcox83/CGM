@@ -179,9 +179,6 @@ def fwdSplit(x):
 	#This function takes a line (from a fwd strand read), splits it, and returns both lines
 	#split the nucleotide sequence into two strings
 	seqA = x[9][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)]
-	if (len(seqA) + int(x[3])) > 5386:
-		print("long")
-		print(len(seqA) + int(x[3]))
 	seqB = x[9][len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)+1:]
 	# split the quality score into two strings
 	qualA = x[10][:len(x[9]) - (int(x[3]) + int(len(x[9])) - refLength)]
